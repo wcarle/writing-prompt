@@ -2,14 +2,83 @@
 
 {% block content %}
 
-{% autoescape true %}   
+{% autoescape true %} 
+	<script type="text/javascript">
+		var confirmOnPageExit = function (e) 
+		{
+			// If we haven't been passed the event get the window.event
+			e = e || window.event;
+
+			var message = 'You have not submitted your work, any progress will be lost.';
+
+			// For IE6-8 and Firefox prior to version 4
+			if (e) 
+			{
+				e.returnValue = message;
+			}
+
+			// For Chrome, Safari, IE8+ and Opera 12+
+			return message;
+		};
+		
+		// Turn it on - assign the function that returns the string
+		window.onbeforeunload = confirmOnPageExit;
+		
+		
+		$(document).ready(function() {
+			$('.submitForm').bootstrapValidator({
+				message: 'This field is not valid',
+				feedbackIcons: {
+					valid: 'glyphicon glyphicon-ok',
+					invalid: 'glyphicon glyphicon-remove',
+					validating: 'glyphicon glyphicon-refresh'
+				},
+				fields: {
+					name: {
+						message: 'Name is not valid',
+						validators: {
+							notEmpty: {
+								message: 'The name is required and cannot be empty'
+							}							
+						}
+					},
+					content: {
+						validators: {
+							notEmpty: {
+								message: 'Your submission is empty'
+							}
+						}
+					}
+				}
+			}).submit(function(){
+				window.onbeforeunload = null;
+			});
+		});
+	</script>
 	<div class="row" style="text-align:center;">
 		<div class="col-md-12"><h1 style="margin-bottom: 50px;">{{assignment.title}}</h1></div>
+		
 	</div>
 	<div class="row">
-		<div class="col-md-6"><div style="width:100%; height:700px; border: 1px grey solid; padding: 10px;">{{assignment.content}}</div></div>
-		<div class="col-md-6"><textarea style="width:100%; height:100%;"></textarea></div>
+		<div class="col-md-6">
+			<h2 style="margin-bottom: 71px;">Prompt:</h2>
+			<textarea disabled style="width:100%; height:400px; border: 1px grey solid; padding: 10px; overflow-y: scroll;">{{assignment.content}}</textarea>
+		</div>
+		<div class="col-md-6">
+			<form class="submitForm" action="/prompt/{{assignment.id}}/" method="post">				
+				<h2>Your response:</h2>
+				<div class="form-group">
+					<div class="input-group input-group-lg" style="margin-bottom:10px;">
+						<span class="input-group-addon">Name:</span>
+						<input type="text" class="form-control" name="name" placeholder="Your Name">				  
+					</div>
+				</div>
+				<textarea name="content" style="width:100%; height:400px;"></textarea>
+				<input class="btn btn-primary pull-right" style="margin-top: 5px;" type="submit" value="Submit"/>
+			</form>
+		</div>
 	</div>
+	
     
 {% endautoescape %}
 {% endblock %}

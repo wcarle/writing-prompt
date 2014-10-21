@@ -3,12 +3,68 @@
 {% block content %}
 
 {% autoescape true %}   
+	<script type="text/javascript">
+		$(function(){
+			$(".gmtDate").each(function(){
+				$(this).text(new Date($(this).text()+"Z").toLocaleString())
+			});
+		})
+	</script>
 
-    <form action="/add" method="post">
-      <div>Title: <input type="text" name="title"/></div>
-      <div>Content: <textarea name="content" rows="50" cols="200"></textarea></div>
+    <form action="/add/{{assignment.id}}" method="post">
+      <div>
+			<h3>Title:</h3> 
+			<div class="input-group input-group-lg">
+				<input value="{{assignment.title}}" class="form-control" type="text" name="title"/>  
+			</div>
+		  
+	  </div>
+      <div><h3>Content:</h3> <textarea name="content" style="width:100%; height: 30%;">{{assignment.content}}</textarea></div>
+	  <br/>
       <div><input class="btn btn-primary" type="submit" value="Save"></div>
     </form>
+	{% if assignment.id %}
+	<div class="row">
+		<div class="well col-md-6">
+			<h2>Code: {{assignment.id}}</h2>
+		</div>
+		<div class="well col-md-6">
+			<h2>Link: <a href="/prompt/{{assignment.id}}/" target="_blank">/prompt/{{assignment.id}}/</a></h2>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12">
+			<h1>Submissions:</h1>
+				{% if not submissions %}
+					<b>This assignment has no submissions.</b>
+				{% else %}
+				
+				<div class="panel-group" id="accordion">
+					{% for submission in submissions %}
+						<div class="panel panel-default">
+							<div class="panel-heading">
+							  <h4 class="panel-title">
+								<a data-toggle="collapse" data-parent="#accordion" href="#{{submission.key.id()}}">
+								  {{submission.author}}
+								</a>
+							  </h4>
+							</div>
+							<div id="{{submission.key.id()}}" class="panel-collapse collapse">
+							  <div class="panel-body">
+								<h4>Submitted on: <span class="gmtDate">{{submission.date}}</span></h4>
+								<h4>Response: </h4>
+								<textarea disabled style="width:100%; height:300px;">{{submission.content}}</textarea>
+							  </div>
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+				{% endif %}
+			  			 
+			
+		</div>
+	</div>
+	{% endif %}
     
 {% endautoescape %}
 {% endblock %}

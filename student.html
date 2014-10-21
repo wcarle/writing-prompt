@@ -3,10 +3,14 @@
 {% block content %}
 
 {% autoescape true %}   
+	
 	<div class="row">
 		<div style="text-align:center;" class="col-md-12">
-			<form action="/student" method="post">
-				<h1>Enter your assignment code:</h1>    
+			{% if found == 'false'%}
+				<div class="alert alert-danger" role="alert">Assignment not found</div>
+			{% endif %}
+			<form class="submitForm" action="/student" method="post">				
+				<h1>Assignment Code:</h1>    
 				<div class="input-group input-group-lg">
 				  <input type="text" class="form-control" name="code" placeholder="Code">
 				  <span class="input-group-btn">

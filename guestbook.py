@@ -21,19 +21,10 @@ DEFAULT_GUESTBOOK_NAME = 'default_guestbook'
 
 def id_generator(size=6, chars=string.ascii_uppercase + string.digits):
 	return ''.join(random.choice(chars) for _ in range(size))
-# We set a parent key on the 'Greetings' to ensure that they are all in the same
-# entity group. Queries across the single entity group will be consistent.
-# However, the write rate should be limited to ~1/second.
 
-def guestbook_key(guestbook_name=DEFAULT_GUESTBOOK_NAME):
+def assignment_key():
     """Constructs a Datastore key for a Guestbook entity with guestbook_name."""
-    return ndb.Key('Guestbook', guestbook_name)
-class Greeting(ndb.Model):
-    """Models an individual Guestbook entry with author, content, and date."""
-    author = ndb.UserProperty()
-    content = ndb.StringProperty(indexed=False)
-    date = ndb.DateTimeProperty(auto_now_add=True)
-
+    return ndb.Key('Assignment', 'Assignment')
 class Assignment(ndb.Model):
 	"""Models an individual Guestbook entry with author, content, and date."""
 	id = ndb.StringProperty(indexed=True)
@@ -41,7 +32,11 @@ class Assignment(ndb.Model):
 	title = ndb.StringProperty(indexed=False)
 	content = ndb.StringProperty(indexed=False)
 	date = ndb.DateTimeProperty(auto_now_add=True)
-
+class Submission(ndb.Model):
+	"""Models an individual Guestbook entry with author, content, and date."""
+	author = ndb.StringProperty(indexed=False)
+	content = ndb.StringProperty(indexed=False)
+	date = ndb.DateTimeProperty(auto_now_add=True)
 
 # [START main_page]
 class MainPage(webapp2.RequestHandler):
@@ -71,9 +66,9 @@ class TeachersPage(webapp2.RequestHandler):
 		if user:
 			url = users.create_logout_url(self.request.uri)
 			url_linktext = 'Logout'
-			assignments_query = Assignment.query(
-				Assignment.author==user).order(-Assignment.date)
-			assignments = assignments_query.fetch(100)
+			q = Assignment.query(ancestor=assignment_key())
+			q = q.filter(Assignment.author==user).order(-Assignment.date)
+			assignments = q.fetch(100)
 		else:
 			url = users.create_login_url(self.request.uri)
 			url_linktext = 'Login'
@@ -88,71 +83,100 @@ class TeachersPage(webapp2.RequestHandler):
 		self.response.write(template.render(template_values))
 		
 class AddPage(webapp2.RequestHandler):
-	def get(self):
+	def get(self, id):
 		user = users.get_current_user()
-		if user:				
-			template_values = {				
-			}
+		template_values = {
+			'assignment' : None
+		}
+		if user:	
+			if id:
+				assignment = Assignment.query(ancestor=assignment_key()).filter(
+					Assignment.id == id).fetch(1)[0]
+				if assignment.author != user:
+					self.redirect('/error')
+				submissions = Submission.query(ancestor=assignment.key).fetch(1000)
+				template_values = {		
+					'assignment': assignment,
+					'submissions': submissions
+				}
 			template = JINJA_ENVIRONMENT.get_template('add.html')
 			self.response.write(template.render(template_values))
 			
-	def post(self):
-		
-		id = ""
-		while not id:
-			id = id_generator()
-			existing = Assignment.query(
-				Assignment.id == id).fetch(1)
+	def post(self, id):
+		if id:
+			assignment = Assignment.query(ancestor=assignment_key()).filter(
+					Assignment.id == id).fetch(1)[0]
+			assignment.title = self.request.get('title')
+			assignment.content = self.request.get('content')	
+			assignment.put()
+		else:
+			while not id:
+				id = id_generator()
+				existing = Assignment.query(
+					Assignment.id == id).fetch(1)
+				
 			
-		
-		user = users.get_current_user()
-		assignment = Assignment()
-		assignment.id = id
-		if user:
-			assignment.author = user
+			user = users.get_current_user()
+			assignment = Assignment(parent=assignment_key())
+			assignment.id = id
+			if user:
+				assignment.author = user
 
-		assignment.content = self.request.get('content')
-		assignment.title = self.request.get('title')
-		assignment.put()
+			assignment.content = self.request.get('content')
+			assignment.title = self.request.get('title')
+			assignment.put()
 
-		self.redirect('/teacher')
+		self.redirect('/add/' + id)
 class PromptPage(webapp2.RequestHandler):
 	def get(self, id):
-		assignment = Assignment.query(
+		assignment = Assignment.query(ancestor=assignment_key()).filter(
 				Assignment.id == id).fetch(1)
+		if len(assignment) == 0:
+			return self.redirect('/student?found=false')
 		template_values = {		
-			'assignment': assignment[0]
+			'assignment': assignment[0],
+			'name': self.request.get('name')
 		}
 		template = JINJA_ENVIRONMENT.get_template('prompt.html')
 		self.response.write(template.render(template_values))
 			
-	def post(self):
-		user = users.get_current_user()
-		assignment = Assignment()
-
-		if user:
-			assignment.author = user
-
-		assignment.content = self.request.get('content')
-		assignment.title = self.request.get('title')
-		assignment.put()
-
-		self.redirect('/teacher')
+	def post(self, id):
+		assignment = Assignment.query(ancestor=assignment_key()).filter(
+			Assignment.id == id).fetch(1)[0]
+		content = self.request.get('content')
+		submission = Submission(parent=assignment.key)			
+		submission.content =  self.request.get('content')
+		submission.author =  self.request.get('name')
+		submission.put()
+		self.redirect('/complete')
 		
 class StudentPage(webapp2.RequestHandler):
 	def get(self):
+		template_values = {		
+			'found': self.request.get('found')
+		}
 		template = JINJA_ENVIRONMENT.get_template('student.html')
-		self.response.write(template.render())			
+		self.response.write(template.render(template_values))			
 	def post(self):
 		code = self.request.get('code')
-		self.redirect('/prompt/' + code)
-		
+		self.redirect('/prompt/' + code + '/')
+class CompletePage(webapp2.RequestHandler):
+	def get(self):
+		template = JINJA_ENVIRONMENT.get_template('complete.html')
+		self.response.write(template.render())			
+
+class ErrorPage(webapp2.RequestHandler):
+	def get(self):
+		template = JINJA_ENVIRONMENT.get_template('error.html')
+		self.response.write(template.render())	
 
 
 application = webapp2.WSGIApplication([
     ('/', MainPage),
     ('/teacher', TeachersPage),
     ('/student', StudentPage),
-    ('/add', AddPage),
-    ('/prompt/(.*)', PromptPage),
+    ('/complete', CompletePage),
+    ('/error', ErrorPage),
+    ('/add/(.*)', AddPage),
+    ('/prompt/(.*)/', PromptPage),
 ], debug=True)
