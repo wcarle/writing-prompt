@@ -1,0 +1,12 @@
+indexes:
+- kind: Greeting
+  ancestor: yes
+  properties:
+  - name: date
+    direction: desc
+
+- kind: Assignment
+  properties:
+  - name: author
+  - name: date
+    direction: desc

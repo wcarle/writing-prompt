@@ -1,0 +1,26 @@
+application: writing-prompt
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /css
+  static_dir: css
+  expiration: "1d 0m"
+- url: /js
+  static_dir: js
+  expiration: "1d 0m"
+- url: /fonts
+  static_dir: fonts
+  expiration: "1d 0m"
+- url: /.*
+  script: guestbook.application
+
+# [START libraries]
+libraries:
+- name: webapp2
+  version: latest
+- name: jinja2
+  version: latest
+# [END libraries]

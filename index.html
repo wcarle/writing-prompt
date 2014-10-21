@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% autoescape true %}
+	<div class="row" >
+		<div class="col-md-12" style="text-align:center;">
+			<h1 style="font-size:6em;">I am a:</h1>
+		</div>
+	</div>
+    <div class="row"">
+		<div class="col-md-6" style="text-align:center;">
+			<a style="font-size:4em;" class="btn btn-primary" href="/student">Student</a>
+		</div>
+		<div class="col-md-6" style="text-align:center;">
+			<a style="font-size:4em;" class="btn btn-primary" href="/teacher">Teacher</a>
+		</div>
+	</div>
+{% endautoescape %}
+{% endblock %}
+

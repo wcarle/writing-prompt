@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% autoescape true %}    
+	{% if user %}
+		<b>Welcome back {{ user.nickname() }}</b>
+	{% else %}
+		Please Login:
+	{% endif %}<br/>
+    <a class="btn btn-primary" href="{{ url|safe }}">{{ url_linktext }}</a>
+	
+	
+	{% if user %}
+		<h1>Assignments </h1><a class="btn btn-default" href="/add">Add Assignment</a><br/><br/>
+		{% if not assignments %}
+			<b>You don't have any assignments.</b>
+		{% else %}
+			<div class="list-group">
+			{% for assignment in assignments %}
+				<a class="list-group-item" href="/prompt/{{ assignment.id }}">{{assignment.title}}</a>
+			{% endfor %}
+			</div>
+		{% endif %}
+	{% endif %}
+{% endautoescape %}
+{% endblock %}
+

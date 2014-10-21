@@ -1,0 +1,15 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% autoescape true %}   
+
+    <form action="/add" method="post">
+      <div>Title: <input type="text" name="title"/></div>
+      <div>Content: <textarea name="content" rows="50" cols="200"></textarea></div>
+      <div><input class="btn btn-primary" type="submit" value="Save"></div>
+    </form>
+    
+{% endautoescape %}
+{% endblock %}
+
